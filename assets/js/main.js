@@ -3,6 +3,20 @@ let game = {};
 let panel = 'start';
 let $ = function(domElement) { return document.querySelector(domElement); }
 
+// Добавляем стили для пуль
+const style = document.createElement('style');
+style.textContent = `
+.bullet {
+    background: yellow;
+    position: absolute;
+    border-radius: 2px;
+    box-shadow: 0 0 5px yellow;
+    z-index: 10;
+}
+`;
+
+document.head.appendChild(style);
+
 let nav = () => {
     document.onclick = (ev) => {
         ev.preventDefault();

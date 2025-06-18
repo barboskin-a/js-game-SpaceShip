@@ -22,6 +22,18 @@ main {
     height: 100%;
 }
 
+#startGame {
+    color: #ffffff;
+    background-color: #919eea;
+    border-color: #919eea;
+}
+
+#restart{
+    color: #ffffff;
+    background-color: #919eea;
+    border-color: #919eea;
+}
+
 .main {
     background: linear-gradient(#02042D, #0822aa, #919eea);
     padding: 5vh;
@@ -30,11 +42,11 @@ main {
 }
 
 h1 {
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255);
 }
 
 h2{
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255);
 }
 
 .changeName {

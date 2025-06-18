@@ -98,13 +98,19 @@ class Asteroids extends Drawable {
         this.h = 70;
         this.y = 60; //чтобы появлялтся под панелью
         this.x = random(0, window.innerWidth - this.w);
-        this.offsets.y = 3;
+        this.offsets.y = 2;
         this.createElement();
     }
 //метод начисления поинтов и отнятия жизни
     update() {
         if (this.isCollision(this.game.player)) this.takePoint(); //метод начисления поинта
-        if (this.y > window.innerHeight) this.takeDamage();
+        if (this.y > window.innerHeight) this.notTakePoint();
+        if (this.isCollision(this.game.player)) {
+            this.game.hp = 0; // Завершаем игру
+            this.game.remove(this);
+            this.removeElement();
+            return;
+        }
         super.update();
     }
 
@@ -116,11 +122,18 @@ class Asteroids extends Drawable {
         }
     }
 
+    //удаляет очки
+    notTakePoint() {
+        if (this.game.remove(this)) {
+            this.removeElement(); //отрабатывает метод
+            this.game.points--; //добавляем очки
+        }
+    }
+
     //отнимаются жизни
     takeDamage() {
         if (this.game.remove(this)) {
             this.removeElement(); //отрабатывает метод
-            this.game.points--; //удаляет очки
             this.game.hp--;
         }
     }
@@ -135,7 +148,7 @@ class Asteroid extends Asteroids {
 class Asteroid_fire extends Asteroids {
     constructor(game) {
         super(game);
-        this.offsets.y = 5;
+        this.offsets.y = 1;
     }
 }
 
@@ -147,8 +160,7 @@ class Player extends Drawable {
         this.x = window.innerWidth / 2 - this.w / 2;
         this.y = window.innerHeight - this.h;
         this.speedPerFrame = 10;
-        this.skillTimer = 0; //скил
-        this.couldTimer = 0; // откат
+        this.fireCooldown = 0; // Таймер задержки между выстрелами
         this.keys = {
             ArrowLeft: false,
             ArrowRight: false,
@@ -159,7 +171,13 @@ class Player extends Drawable {
     }
 
     bindKeyEvents() {
-        document.addEventListener('keydown', ev => this.changeKeyStatus(ev.code, true));
+        document.addEventListener('keydown', ev => {
+            this.changeKeyStatus(ev.code, true);
+            if(ev.code === "Space") {
+                this.shoot(); // Выстрел при нажатии пробела
+                ev.preventDefault(); // Предотвращаем прокрутку страницы
+            }
+        });
         document.addEventListener('keyup', ev => this.changeKeyStatus(ev.code, false));
     }
 
@@ -170,43 +188,29 @@ class Player extends Drawable {
     }
 
     shoot() {
-        if (this.fireCooldown <= 0) {
-            const bulletX = this.x + this.w / 2;
-            const bulletY = this.y;
-            this.game.generateBullet(bulletX, bulletY);
-            this.fireCooldown = 15;
+        // Проверяем задержку между выстрелами
+        if(this.fireCooldown <= 0) {
+            // Создаем пулю в центре корабля
+            const bullet = new Bullet(this.game, this.x + this.w/2, this.y);
+            this.game.elements.push(bullet);
+            this.fireCooldown = 1; // Устанавливаем задержку
         }
     }
 
     update() {
-        //двигает ракету и смотрит чтобы она не вылетела за края
+        // Движение корабля
         if(this.keys.ArrowLeft && this.x > 0) this.offsets.x = -this.speedPerFrame;
         else if(this.keys.ArrowRight && this.x < window.innerWidth - this.w)
             this.offsets.x = this.speedPerFrame;
         else this.offsets.x = 0;
 
-        // Стрельба при нажатии Space
-        if(this.keys.Space) {
-            this.shoot();
+        // Уменьшаем таймер задержки
+        if(this.fireCooldown > 0) {
+            this.fireCooldown--;
         }
-
-        if(this.fireCooldown > 0) this.fireCooldown--;
 
         super.update();
     }
-
-
-    //метод скила
-    // applySkill() {
-    //     for(let i = 1; i < this.game.elements.length; i++) { //i=1 потомо что под 0 корзина
-    //         //если фрукт слева, то притягивается справа и наоборот
-    //         if(this.game.elements[i].x < this.x + (this.w / 2)) {
-    //             this.game.elements[i].x += 15;
-    //         } else if(this.game.elements[i].x > this.x + (this.w / 2)) {
-    //             this.game.elements[i].x -= 15;
-    //         }
-    //     }
-    // }
 }
 
 class Game {
@@ -223,7 +227,7 @@ class Game {
             m1: 0,
             m2: 0,
             s1: 0,
-            s2: 5
+            s2: 8
         };
         this.ended = false; //по умолчанию игра не окончена
         this.pause = false;
@@ -274,6 +278,15 @@ class Game {
             }
             if(!this.ended) this.loop(); //вызов только если игра не окончена
         });
+    }
+
+    remove(element) {
+        const index = this.elements.indexOf(element);
+        if(index !== -1) {
+            this.elements.splice(index, 1);
+            return true;
+        }
+        return false;
     }
 
     //метод для обратного таймера, чтобы шло время
@@ -338,16 +351,16 @@ class Game {
         this.ended = true; //как только хп < 0 ended становится true
         let time = this.time;
         let hp = this.hp;
-        if(time.s1 <= 1 || time.m2 <= 1 || time.m1 <= 1) {
+        if((time.s1 <= 1 && time.m2 <= 1 && time.m1 <= 1) && (hp != 0)){
             $('#playerName').innerHTML = `Поздравляем, ${this.name}!`;
-            $('#collectedFruits').innerHTML = `Вы унижтожили ${this.points} астероидов`;
-            $('#congratulation').innerHTML = `Вы выиграли`;
-        } else if(hp ==  0) {
+            $('#collectedFruits').innerHTML = `Вы уничтожили ${this.points} астероидов`;
+            $('#congratulation').innerHTML = `Вы выиграли!`;
+        } else if((hp <= 0) && (time.s1 >= 1 && time.m2 >= 1 && time.m1 >= 1)) {
             $('#playerName').innerHTML = `Жаль, ${this.name}!`;
             $('#endTime').innerHTML = `Ваше время ${time.m1}${time.m2}:${time.s1}${time.s2}`;
-            $('#collectedFruits').innerHTML = `Вы собрали ${this.points} фруктов`;
-            $('#congratulation').innerHTML = `Вы проиграли!`;
+            $('#collectedFruits').innerHTML = `Вы уничтожили ${this.points} астероидов`;
+            $('#congratulation').innerHTML = `Вы проиграли`;
         }
-        go('end', 'panel d-flex justify-content-center align-items-center'); //выводит конец игры
+        go('end', 'panel d-flex justify-content-center align-items-center');
     }
 }
