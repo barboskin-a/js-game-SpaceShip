@@ -65,7 +65,6 @@ class Bullet extends Drawable {
         this.createElement();
         this.element.className = "bullet";
     }
-
     update() {
         this.y += this.speed;
 
@@ -98,7 +97,7 @@ class Asteroids extends Drawable {
         this.h = 70;
         this.y = 60; //чтобы появлялтся под панелью
         this.x = random(0, window.innerWidth - this.w);
-        this.offsets.y = 2;
+        this.offsets.y = 3;
         this.createElement();
     }
 //метод начисления поинтов и отнятия жизни
@@ -148,7 +147,7 @@ class Asteroid extends Asteroids {
 class Asteroid_fire extends Asteroids {
     constructor(game) {
         super(game);
-        this.offsets.y = 1;
+        this.offsets.y = 3;
     }
 }
 
@@ -226,21 +225,21 @@ class Game {
         this.time = { //секундомер
             m1: 0,
             m2: 0,
-            s1: 0,
-            s2: 8
+            s1: 3,
+            s2: 0
         };
+        this.name = localStorage.getItem('userName') || 'Player';
+        this.isTester = this.name.toLowerCase() === 'tester';
+        // Применяем стиль сразу при создании игры
+        if (this.isTester) {
+            $('#name').style.color = 'red';}
+
         this.ended = false; //по умолчанию игра не окончена
         this.pause = false;
         this.keyEvents(); //прослушка esc
-        //отображение тестера
-        // const isTestMode = localStorage.getItem('testMode') === 'true';
-        // this.name = localStorage.getItem('userName') || 'Player';
-        // if (isTestMode) {
-        //     $('#playerName').style.color = 'red';
-        // }
-// ? если isTestMode = true, то возвращ. tester, иначе переходит к :, получ userName из localStorage, если сущ. и не ложь, возвращ.
-        //если нет, то Player
+
     }
+
     generateBullet(x, y) {
         const bullet = new Bullet(this, x, y);
         this.elements.push(bullet);
@@ -269,7 +268,7 @@ class Game {
                     this.randomAsteroidGenerate();
                     this.timer(); //новый метод таймер
                 }
-                if(this.hp <= 0) this.end();
+                if(this.hp === 0) this.end();
                 $('.pause').style.display = 'none';
                 this.updateElements();
                 this.setParams();
@@ -343,6 +342,8 @@ class Game {
         let values = [this.name, this.points, this.hp]; //привязка параметров
         params.forEach((el, index) => {
             $(`#${el}`).innerHTML = values[index];
+            if (el === 'name' && this.isTester) {
+                $(`#${el}`).style.color = 'red';}
         })
     }
 
@@ -351,14 +352,13 @@ class Game {
         this.ended = true; //как только хп < 0 ended становится true
         let time = this.time;
         let hp = this.hp;
-        if((time.s1 <= 1 && time.m2 <= 1 && time.m1 <= 1) && (hp != 0)){
+        if((time.s1 === 0 && time.m2 === 0 && time.m1 === 0) && (hp !== 0)){
             $('#playerName').innerHTML = `Поздравляем, ${this.name}!`;
             $('#collectedFruits').innerHTML = `Вы уничтожили ${this.points} астероидов`;
             $('#congratulation').innerHTML = `Вы выиграли!`;
-        } else if((hp <= 0) && (time.s1 >= 1 && time.m2 >= 1 && time.m1 >= 1)) {
+        } else if((hp === 0) && (time.s1 >= 0 && time.m2 >= 0 && time.m1 >= 0)) {
             $('#playerName').innerHTML = `Жаль, ${this.name}!`;
-            $('#endTime').innerHTML = `Ваше время ${time.m1}${time.m2}:${time.s1}${time.s2}`;
-            $('#collectedFruits').innerHTML = `Вы уничтожили ${this.points} астероидов`;
+            $('#collectedFruits').innerHTML = `Вы уничтожили ${this.points - 1} астероидов`;
             $('#congratulation').innerHTML = `Вы проиграли`;
         }
         go('end', 'panel d-flex justify-content-center align-items-center');

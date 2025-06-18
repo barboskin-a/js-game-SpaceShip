@@ -12,6 +12,10 @@ main {
     background-size: 100% 100%;
 }
 
+.panel d-flex {
+    background: url("../img/коты в космосе.png") right no-repeat;
+}
+
 .panel {
     width: 100%;
     height: 100%;
@@ -92,7 +96,6 @@ h2{
 .asteroid_fire {
     background: url("../img/asteroid_fire.png") center no-repeat;
     background-size: contain;
-    animation: rotate infinite .7s linear;
 }
 
 .pause {

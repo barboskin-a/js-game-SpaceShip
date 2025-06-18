@@ -7,10 +7,10 @@ let $ = function(domElement) { return document.querySelector(domElement); }
 const style = document.createElement('style');
 style.textContent = `
 .bullet {
-    background: yellow;
+    background: orange;
     position: absolute;
     border-radius: 2px;
-    box-shadow: 0 0 5px yellow;
+    box-shadow: 0 0 10px yellow;
     z-index: 10;
 }
 `;
