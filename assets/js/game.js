@@ -50,9 +50,45 @@ class Drawable {
             y2: element.y + element.h
         };
         return a.x1 < b.x2 && b.x1 < a.x2 && a.y1 < b.y2 && b.y1 < a.y2;
+    }
+}
 
+//пуля
+class Bullet extends Drawable {
+    constructor(game, x, y) {
+        super(game);
+        this.w = 5;
+        this.h = 15;
+        this.x = x - this.w / 2;
+        this.y = y;
+        this.speed = -10; // Движение вверх
+        this.createElement();
+        this.element.className = "bullet";
     }
 
+    update() {
+        this.y += this.speed;
+
+        // Удаляем пулю, если она вышла за пределы экрана
+        if (this.y + this.h < 0) {
+            this.game.remove(this);
+            this.removeElement();
+            return;
+        }
+
+        // Проверяем столкновения с астероидами
+        for (let i = 0; i < this.game.elements.length; i++) {
+            const element = this.game.elements[i];
+            if (element instanceof Asteroids && this.isCollision(element)) {
+                this.game.points++; // Начисляем очки
+                this.game.remove(element);
+                element.removeElement();
+                this.game.remove(this);
+                this.removeElement();
+                break;
+            }
+        }
+    }
 }
 
 class Asteroids extends Drawable {
@@ -110,7 +146,7 @@ class Player extends Drawable {
         this.h = 109;
         this.x = window.innerWidth / 2 - this.w / 2;
         this.y = window.innerHeight - this.h;
-        this.speedPerFrame = 20;
+        this.speedPerFrame = 10;
         this.skillTimer = 0; //скил
         this.couldTimer = 0; // откат
         this.keys = {
@@ -120,15 +156,25 @@ class Player extends Drawable {
         };
         this.createElement();
         this.bindKeyEvents();
-    } //отвечает за движение с логической стороны
+    }
+
     bindKeyEvents() {
-        //глобальная прослушка события
         document.addEventListener('keydown', ev => this.changeKeyStatus(ev.code, true));
         document.addEventListener('keyup', ev => this.changeKeyStatus(ev.code, false));
     }
-    changeKeyStatus(code, value) { //проверяем код кнопки и положение(?)
+
+    changeKeyStatus(code, value) {
         if(code in this.keys) {
             this.keys[code] = value;
+        }
+    }
+
+    shoot() {
+        if (this.fireCooldown <= 0) {
+            const bulletX = this.x + this.w / 2;
+            const bulletY = this.y;
+            this.game.generateBullet(bulletX, bulletY);
+            this.fireCooldown = 15;
         }
     }
 
@@ -136,28 +182,21 @@ class Player extends Drawable {
         //двигает ракету и смотрит чтобы она не вылетела за края
         if(this.keys.ArrowLeft && this.x > 0) this.offsets.x = -this.speedPerFrame;
         else if(this.keys.ArrowRight && this.x < window.innerWidth - this.w)
-            this.offsets.x = +this.speedPerFrame;
+            this.offsets.x = this.speedPerFrame;
         else this.offsets.x = 0;
-        //скилл
-        // if(this.keys.Space && this.couldTimer === 0) { //дополняем условие скилом
-        //     this.skillTimer++;
-        //     $('#skill').innerHTML = `осталось ${Math.ceil((240 - this.skillTimer) /60)}`; //240 записит от кадров
-        //     this.applySkill();
-        // }
-        // if(this.skillTimer > 240 || (!this.keys.Space && this.skillTimer > 1)) { //условие для отката
-        //     this.couldTimer++;
-        //     $('#skill').innerHTML = `в откате ещё ${Math.ceil((300 - this.couldTimer) /60)}`;
-        //     this.keys.Space = false; //запрещаем клавишу
-        // }
-        if(this.couldTimer > 300) {
-            this.skillTimer = 0;
-            this.couldTimer = 0;
-            $('#skill').innerHTML = 'Готово';
+
+        // Стрельба при нажатии Space
+        if(this.keys.Space) {
+            this.shoot();
         }
+
+        if(this.fireCooldown > 0) this.fireCooldown--;
+
         super.update();
     }
 
-    // //метод скила
+
+    //метод скила
     // applySkill() {
     //     for(let i = 1; i < this.game.elements.length; i++) { //i=1 потомо что под 0 корзина
     //         //если фрукт слева, то притягивается справа и наоборот
@@ -189,8 +228,20 @@ class Game {
         this.ended = false; //по умолчанию игра не окончена
         this.pause = false;
         this.keyEvents(); //прослушка esc
+        //отображение тестера
+        // const isTestMode = localStorage.getItem('testMode') === 'true';
+        // this.name = localStorage.getItem('userName') || 'Player';
+        // if (isTestMode) {
+        //     $('#playerName').style.color = 'red';
+        // }
+// ? если isTestMode = true, то возвращ. tester, иначе переходит к :, получ userName из localStorage, если сущ. и не ложь, возвращ.
+        //если нет, то Player
     }
-
+    generateBullet(x, y) {
+        const bullet = new Bullet(this, x, y);
+        this.elements.push(bullet);
+        return bullet;
+    }
     generate(className) {
         let element = new className(this);
         this.elements.push(element);

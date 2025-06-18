@@ -31,12 +31,17 @@ let go = (page, attribute) => {
 
 let checkName = () => {
     name = $('#nameInput').value.trim();
-    if(name !== '') {
+
+    if (name === 'tester') {
         $('#startGame').removeAttribute('disabled');
         localStorage.setItem('userName', name);
-    } else if(name === 'tester') {
-        $('#nameInput').style.color = '#00ff00';
-    } else {
+        localStorage.setItem('testMode', 'true');
+    }
+    else if(name !== '') {
+        $('#startGame').removeAttribute('disabled');
+        localStorage.setItem('userName', name);
+    }
+    else {
         $('#startGame').setAttribute('disabled', 'disabled');
     }
 }
